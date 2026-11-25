@@ -283,11 +283,11 @@ const Appx: FC = () => {
     <main
       ref={root}
       data-pending=""
-      className="w-full overflow-x-clip bg-brand text-white [--fs:18vw] md:[--fs:17vw]"
+      className="w-full overflow-x-clip bg-brand text-white [--fs:clamp(2.5rem,15vw,14rem)] md:[--fs:clamp(3rem,13vw,14rem)]"
     >
-      {/* Indicador lateral */}
-      <nav aria-label="Seções" className="fixed right-2 top-1/2 z-50 -translate-y-1/2 md:right-5">
-        <ul className="flex flex-col gap-3">
+      {/* ── Indicador lateral de seção ── */}
+      <nav aria-label="Seções" className="fixed right-3 top-1/2 z-50 -translate-y-1/2 md:right-6">
+        <ul className="flex flex-col gap-4">
           {SECTIONS.map(({ id, label }, i) => (
             <li key={id}>
               <a
@@ -296,26 +296,28 @@ const Appx: FC = () => {
                 data-active={i === 0}
                 aria-label={label}
                 aria-current={i === 0 ? "true" : undefined}
-                className="group flex h-5 w-5 items-center justify-center focus-visible:outline-none"
+                className="group flex h-6 w-6 items-center justify-center focus-visible:outline-none"
               >
-                <span className="block h-2 w-2 rounded-full border border-white bg-transparent transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-brand group-data-[active=true]:h-2.5 group-data-[active=true]:w-2.5 group-data-[active=true]:bg-white" />
+                <span className="block h-2 w-2 rounded-full border border-white/70 bg-transparent transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-brand group-data-[active=true]:h-3 group-data-[active=true]:w-3 group-data-[active=true]:border-white group-data-[active=true]:bg-white" />
               </a>
             </li>
           ))}
         </ul>
       </nav>
 
-      {/* 1 · INÍCIO */}
+      {/* ── 1 · INÍCIO ── */}
       <section id="topo" tabIndex={-1} data-hide className="focus:outline-none">
+        {/* Fatia superior de PARABÉNS */}
         <Sliver text={CONTENT.cropped} edge="top" />
 
-        <nav data-nav aria-label="Principal" className="pt-8 md:pt-10">
-          <ul className={`flex flex-col items-center ${NAV_TEXT} ${MASK_PAD}`}>
+        {/* Navegação principal — layout horizontal em qualquer tela */}
+        <nav data-nav aria-label="Principal" className="border-t border-white/20">
+          <ul className={`flex items-center justify-center gap-6 px-4 py-5 ${NAV_TEXT} ${MASK_PAD} sm:gap-10 md:gap-14 md:py-7`}>
             {CONTENT.nav.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="block py-0.5 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                  className="relative py-1 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-300 hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100"
                 >
                   {item.label}
                 </a>
@@ -325,41 +327,54 @@ const Appx: FC = () => {
         </nav>
       </section>
 
-      {/* 2 · HOMENAGEM */}
+      {/* ── 2 · HOMENAGEM ── */}
       <section
         id="homenagem"
         tabIndex={-1}
         data-hide
-        className="px-6 py-10 focus:outline-none md:px-10 md:py-14"
+        className="px-6 py-16 focus:outline-none md:px-12 md:py-24"
       >
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-y-6 lg:grid-cols-[1fr_minmax(0,38rem)_1fr] lg:gap-x-10 lg:gap-y-0">
-          <div className="flex justify-start lg:justify-center">
+        {/* Grid: iniciais nas pontas, texto no centro */}
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-[auto_1fr_auto] md:gap-12 lg:gap-20">
+          {/* Inicial esquerda */}
+          <div className="hidden justify-center md:flex">
             <Initial letter={left} side="left" />
           </div>
-          <div className="flex justify-end lg:order-3 lg:justify-center">
-            <Initial letter={right} side="right" />
-          </div>
 
+          {/* Parágrafos centrais */}
           <div
             data-paras
-            className="col-span-2 mx-auto flex w-full max-w-[38rem] flex-col gap-5 lg:order-2 lg:col-span-1 lg:max-w-none"
+            className="mx-auto flex w-full max-w-[42rem] flex-col gap-6"
           >
+            {/* Iniciais em mobile (acima do texto) */}
+            <div className="flex items-center justify-between md:hidden">
+              <Initial letter={left} side="left" />
+              <Initial letter={right} side="right" />
+            </div>
+
             {CONTENT.paragraphs.map((text) => (
-              <p key={text} data-para className={`hyphens-auto text-left ${READ} ${MASK_PAD}`}>
+              <p key={text} data-para className={`hyphens-auto ${READ} ${MASK_PAD}`}>
                 {text}
               </p>
             ))}
           </div>
+
+          {/* Inicial direita */}
+          <div className="hidden justify-center md:flex">
+            <Initial letter={right} side="right" />
+          </div>
         </div>
       </section>
 
-      {/* 3 · FESTA */}
-      <section id="festa" tabIndex={-1} data-hide className="pt-6 focus:outline-none md:pt-10">
-        <h2 className={`text-center ${GIANT}`}>
+      {/* ── 3 · FESTA ── */}
+      <section id="festa" tabIndex={-1} data-hide className="pt-8 focus:outline-none md:pt-14">
+        {/* Headline "NO SEU / GRANDE DIA" — sem margens negativas */}
+        <h2 className={`overflow-hidden text-center ${GIANT}`}>
           {CONTENT.headline.map((line) => (
             <GiantLine key={line} text={line} />
           ))}
         </h2>
+        {/* Fatia inferior de PARABÉNS */}
         <Sliver text={CONTENT.cropped} edge="bottom" />
       </section>
     </main>
