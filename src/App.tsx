@@ -1,10 +1,10 @@
 
-import Index from './index.tsx'
+import Appx from './index.tsx'
 function App() {
 
   return (
     <>
-    <Index />
+    <Appx />
     </>
   )
 }

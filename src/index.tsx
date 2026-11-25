@@ -24,13 +24,19 @@ const SECTIONS = [
 ] as const;
 /* ============================================================== */
 
+/* Títulos gigantes (tamanho controlado por --fs no <main>) */
 const GIANT =
-  "font-display uppercase text-black text-[length:var(--fs)] leading-[0.82] tracking-[-0.01em]";
+  "font-display uppercase text-white text-[length:var(--fs)] leading-[0.82] tracking-[-0.01em]";
 
-const SMALL =
-  "font-sans text-[11px] font-medium uppercase leading-[1.03] tracking-[-0.005em] text-black md:text-[clamp(10.5px,0.98vw,15px)]";
+/* Menu: pequeno, mas confortável de ler */
+const NAV_TEXT =
+  "font-sans text-sm font-semibold uppercase leading-snug tracking-[0.06em] text-white md:text-base";
 
-/* Folga na máscara do SplitText para não cortar acentos (Á, É, Ã...) */
+/* Corpo de leitura */
+const READ =
+  "font-sans text-base font-medium leading-[1.65] text-white md:text-lg [text-wrap:pretty]";
+
+/* Folga na máscara do SplitText para não cortar acentos */
 const MASK_PAD = "[&_.split-mask]:py-[0.2em] [&_.split-mask]:-my-[0.2em]";
 
 /* ---------- Palavra gigante cortada ---------- */
@@ -38,9 +44,13 @@ const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) =>
   <div
     aria-hidden="true"
     data-sliver={edge}
-    className={`overflow-hidden ${edge === "top" ? "h-[4.6vw]" : "h-[6.2vw]"}`}
+    className={`overflow-hidden ${
+      edge === "top"
+        ? "h-[calc(var(--fs)*0.28)]"
+        : "h-[calc(var(--fs)*0.38)] pt-[0.14em]"
+    }`}
   >
-    <div className={edge === "top" ? "translate-y-[calc(4.6vw_-_var(--fs)*0.82)]" : ""}>
+    <div className={edge === "top" ? "-translate-y-[66%]" : ""}>
       <span data-word className={`block text-center ${GIANT}`}>
         {text}
       </span>
@@ -48,7 +58,6 @@ const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) =>
   </div>
 );
 
-/* ---------- Linha do título principal (com máscara própria) ---------- */
 const GiantLine: FC<{ text: string }> = ({ text }) => (
   <span data-line className="-my-[0.12em] block overflow-hidden py-[0.12em]">
     <span data-line-inner className="block">
@@ -61,13 +70,13 @@ const Initial: FC<{ letter: string; side: "left" | "right" }> = ({ letter, side 
   <span
     aria-hidden="true"
     data-initial={side}
-    className="block select-none font-script text-[24vw] font-normal italic leading-none text-black md:text-[11vw]"
+    className="block select-none font-script text-[clamp(4.5rem,18vw,8rem)] font-normal italic leading-none text-white lg:text-[clamp(6rem,10vw,10rem)]"
   >
     {letter}
   </span>
 );
 
-const Index: FC = () => {
+const Appx: FC = () => {
   const root = useRef<HTMLElement>(null);
   const [left, right] = CONTENT.initials;
 
@@ -80,7 +89,6 @@ const Index: FC = () => {
       let cancelled = false;
       let mm: gsap.MatchMedia | undefined;
 
-      // Espera as fontes (com limite) antes de medir e dividir textos
       const fontsReady = Promise.race([
         document.fonts.ready,
         new Promise<void>((resolve) => setTimeout(resolve, 1500)),
@@ -93,7 +101,7 @@ const Index: FC = () => {
         mm.add(
           {
             reduce: "(prefers-reduced-motion: reduce)",
-            wide: "(min-width: 768px)",
+            wide: "(min-width: 1024px)",
           },
           (ctx) => {
             const { reduce, wide } = ctx.conditions as { reduce: boolean; wide: boolean };
@@ -102,7 +110,7 @@ const Index: FC = () => {
               el.querySelector<T>(s)!;
             const all = (s: string) => gsap.utils.toArray<HTMLElement>(s, el);
 
-            /* ===== Pontinhos laterais (sempre ativos) ===== */
+            /* ===== Pontinhos laterais ===== */
             const dots = all("a[data-dot]");
             const setActive = (id: string) =>
               dots.forEach((a) => {
@@ -121,7 +129,7 @@ const Index: FC = () => {
               }),
             );
 
-            /* ===== Rolagem suave para âncoras (sempre ativa) ===== */
+            /* ===== Rolagem suave para âncoras ===== */
             const onClick = (e: MouseEvent) => {
               const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
               const id = a?.getAttribute("href")?.slice(1);
@@ -131,7 +139,7 @@ const Index: FC = () => {
               e.preventDefault();
               gsap.to(window, {
                 scrollTo: { y: target, autoKill: true },
-                duration: reduce ? 0 : 1.5,
+                duration: reduce ? 0 : 1.2,
                 ease: "poster",
                 onComplete: () => {
                   history.pushState(null, "", `#${id}`);
@@ -145,14 +153,7 @@ const Index: FC = () => {
             // Movimento reduzido: tudo estático e legível
             if (reduce) return cleanup;
 
-            /* ===== CAPÍTULO 1 · ABERTURA (timeline mestra) ===== */
-            const hero = one("#topo");
-            const topWrap = one("[data-sliver='top']");
-            const topWord = one("[data-sliver='top'] [data-word]");
-            const nav = one("[data-nav]");
-            const role = one("[data-role]");
-            const arrow = one("[data-arrow]");
-
+            /* ===== 1 · ABERTURA ===== */
             const navSplit = SplitText.create(all("[data-nav] a"), {
               type: "lines",
               mask: "lines",
@@ -161,80 +162,58 @@ const Index: FC = () => {
 
             gsap
               .timeline({ defaults: { ease: "editorial" } })
-              // 1) palavra gigante sobe por trás da máscara
-              .from(topWord, { yPercent: 105, duration: 1.5, ease: "poster" }, 0.15)
-              // 2) menu entra linha a linha
-              .from(navSplit.lines, { yPercent: 110, duration: 1, stagger: 0.09 }, 0.8)
-              // 3) convite para rolar
-              .from(role, { y: "1.2em", opacity: 0, duration: 0.9 }, 1.3)
-              // 4) movimento final: a seta indica o caminho (4 batidas e para)
-              .to(arrow, { y: 5, duration: 0.4, yoyo: true, repeat: 3, ease: "sine.inOut" }, 2);
+              .from(one("[data-sliver='top'] [data-word]"), {
+                yPercent: 105,
+                duration: 1.4,
+                ease: "poster",
+              }, 0.1)
+              .from(navSplit.lines, { yPercent: 110, duration: 0.9, stagger: 0.08 }, 0.7);
 
-            // Saída do hero: camadas com velocidades diferentes
-            gsap.to(topWrap, {
-              yPercent: -100,
-              ease: "none",
-              scrollTrigger: { trigger: hero, start: "top top", end: "35% top", scrub: true },
-            });
-            gsap.to(nav, {
-              yPercent: -40,
-              opacity: 0,
-              ease: "none",
-              scrollTrigger: { trigger: hero, start: "top top", end: "65% top", scrub: true },
-            });
-
-            /* ===== CAPÍTULO 2 · HOMENAGEM ===== */
+            /* ===== 2 · HOMENAGEM ===== */
             const homenagem = one("#homenagem");
             const leftInitial = one("[data-initial='left']");
             const rightInitial = one("[data-initial='right']");
             const OPEN = "inset(-30% -30% -30% -30%)";
 
-            // Caligrafia: "escrita" por máscara, vindo de cada lado
             gsap.fromTo(
               leftInitial,
-              { clipPath: "inset(-30% 100% -30% -30%)", x: wide ? "-4vw" : "-8vw" },
+              { clipPath: "inset(-30% 100% -30% -30%)", x: "-6vw" },
               {
                 clipPath: OPEN,
                 x: 0,
-                duration: 1.8,
+                duration: 1.6,
                 ease: "poster",
-                scrollTrigger: { trigger: homenagem, start: "top 60%", once: true },
+                scrollTrigger: { trigger: homenagem, start: "top 75%", once: true },
               },
             );
             gsap.fromTo(
               rightInitial,
-              { clipPath: "inset(-30% -30% -30% 100%)", x: wide ? "4vw" : "8vw" },
+              { clipPath: "inset(-30% -30% -30% 100%)", x: "6vw" },
               {
                 clipPath: OPEN,
                 x: 0,
-                duration: 1.8,
-                delay: 0.15,
+                duration: 1.6,
+                delay: 0.12,
                 ease: "poster",
-                scrollTrigger: { trigger: homenagem, start: "top 60%", once: true },
+                scrollTrigger: { trigger: homenagem, start: "top 75%", once: true },
               },
             );
 
-            // Parallax em sentidos opostos (mais discreto no mobile)
-            const drift = wide ? 18 : 6;
-            gsap.to(leftInitial, {
-              yPercent: -drift,
-              ease: "none",
-              scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
-            });
-            gsap.to(rightInitial, {
-              yPercent: drift,
-              ease: "none",
-              scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
-            });
+            // Parallax só no desktop e bem discreto
             if (wide) {
-              gsap.to("[data-paras]", {
-                yPercent: -6,
+              gsap.to(leftInitial, {
+                yPercent: -10,
+                ease: "none",
+                scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
+              });
+              gsap.to(rightInitial, {
+                yPercent: 10,
                 ease: "none",
                 scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
               });
             }
 
-            // Parágrafos linha a linha (re-divide sozinho ao redimensionar)
+            // Parágrafos linha a linha (re-divide ao redimensionar)
             SplitText.create(all("[data-para]"), {
               type: "lines",
               mask: "lines",
@@ -243,55 +222,44 @@ const Index: FC = () => {
               onSplit: (self) =>
                 gsap.from(self.lines, {
                   yPercent: 110,
-                  duration: 1.3,
+                  duration: 1.1,
                   ease: "editorial",
-                  stagger: 0.05,
-                  scrollTrigger: { trigger: homenagem, start: "top 55%", once: true },
+                  stagger: 0.04,
+                  scrollTrigger: { trigger: homenagem, start: "top 70%", once: true },
                 }),
             });
 
-            /* ===== CAPÍTULO 3 · FESTA ===== */
+            /* ===== 3 · FESTA ===== */
             const festa = one("#festa");
-            const lines = all("[data-line]");
-            const inners = all("[data-line-inner]");
-            const botWord = one("[data-sliver='bottom'] [data-word]");
 
-            // Título sobe pela máscara
-            gsap.from(inners, {
+            gsap.from(all("[data-line-inner]"), {
               yPercent: 110,
-              duration: 1.5,
+              duration: 1.3,
               ease: "editorial",
-              stagger: 0.14,
-              scrollTrigger: { trigger: festa, start: "top 60%", once: true },
+              stagger: 0.12,
+              scrollTrigger: { trigger: festa, start: "top 70%", once: true },
             });
 
-            // Linhas deslizam em direções opostas até se alinharem
-            const slide = wide ? 10 : 6;
-            lines.forEach((line, i) => {
+            const slide = wide ? 8 : 4;
+            all("[data-line]").forEach((line, i) => {
               gsap.fromTo(
                 line,
                 { xPercent: i % 2 === 0 ? -slide : slide },
                 {
                   xPercent: 0,
                   ease: "none",
-                  scrollTrigger: {
-                    trigger: festa,
-                    start: "top bottom",
-                    end: "center center",
-                    scrub: true,
-                  },
+                  scrollTrigger: { trigger: festa, start: "top bottom", end: "center center", scrub: true },
                 },
               );
             });
 
-            // Fecho: a palavra gigante do rodapé emerge conforme a página termina
             gsap.fromTo(
-              botWord,
+              one("[data-sliver='bottom'] [data-word]"),
               { yPercent: 100 },
               {
                 yPercent: 0,
                 ease: "none",
-                scrollTrigger: { trigger: festa, start: "top 60%", end: "bottom bottom", scrub: true },
+                scrollTrigger: { trigger: festa, start: "top 70%", end: "bottom bottom", scrub: true },
               },
             );
 
@@ -304,7 +272,7 @@ const Index: FC = () => {
 
       return () => {
         cancelled = true;
-        mm?.revert(); // desfaz timelines, ScrollTriggers e SplitTexts
+        mm?.revert();
       };
     },
     { scope: root },
@@ -314,10 +282,10 @@ const Index: FC = () => {
     <main
       ref={root}
       data-pending=""
-      className="w-full overflow-x-clip bg-brand text-black [--fs:18vw] md:[--fs:17vw]"
+      className="w-full overflow-x-clip bg-brand text-white [--fs:18vw] md:[--fs:17vw]"
     >
       {/* Indicador lateral */}
-      <nav aria-label="Seções" className="fixed right-3 top-1/2 z-50 -translate-y-1/2 md:right-6">
+      <nav aria-label="Seções" className="fixed right-2 top-1/2 z-50 -translate-y-1/2 md:right-5">
         <ul className="flex flex-col gap-3">
           {SECTIONS.map(({ id, label }, i) => (
             <li key={id}>
@@ -327,9 +295,9 @@ const Index: FC = () => {
                 data-active={i === 0}
                 aria-label={label}
                 aria-current={i === 0 ? "true" : undefined}
-                className="group flex h-4 w-4 items-center justify-center focus-visible:outline-none"
+                className="group flex h-5 w-5 items-center justify-center focus-visible:outline-none"
               >
-                <span className="block h-2 w-2 rounded-full border border-black bg-transparent transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-black group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-brand group-data-[active=true]:h-2.5 group-data-[active=true]:w-2.5 group-data-[active=true]:bg-black" />
+                <span className="block h-2 w-2 rounded-full border border-white bg-transparent transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-brand group-data-[active=true]:h-2.5 group-data-[active=true]:w-2.5 group-data-[active=true]:bg-white" />
               </a>
             </li>
           ))}
@@ -337,16 +305,16 @@ const Index: FC = () => {
       </nav>
 
       {/* 1 · INÍCIO */}
-      <section id="topo" tabIndex={-1} data-hide className="flex min-h-svh flex-col focus:outline-none">
+      <section id="topo" tabIndex={-1} data-hide className="focus:outline-none">
         <Sliver text={CONTENT.cropped} edge="top" />
 
-        <nav data-nav aria-label="Principal" className="mt-[12vw] md:mt-[5.4vw]">
-          <ul className={`flex flex-col items-center ${SMALL} ${MASK_PAD}`}>
+        <nav data-nav aria-label="Principal" className="pt-8 md:pt-10">
+          <ul className={`flex flex-col items-center ${NAV_TEXT} ${MASK_PAD}`}>
             {CONTENT.nav.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="block underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+                  className="block py-0.5 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
                 >
                   {item.label}
                 </a>
@@ -354,17 +322,6 @@ const Index: FC = () => {
             ))}
           </ul>
         </nav>
-
-        <a
-          data-role
-          href="#homenagem"
-          className={`mt-auto pb-8 text-center underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none ${SMALL}`}
-        >
-          ROLE{" "}
-          <span data-arrow className="inline-block">
-            ↓
-          </span>
-        </a>
       </section>
 
       {/* 2 · HOMENAGEM */}
@@ -372,26 +329,22 @@ const Index: FC = () => {
         id="homenagem"
         tabIndex={-1}
         data-hide
-        className="flex min-h-svh items-center focus:outline-none"
+        className="px-6 py-10 focus:outline-none md:px-10 md:py-14"
       >
-        <div className="grid w-full grid-cols-2 items-center gap-y-6 px-6 md:grid-cols-[1fr_minmax(260px,28%)_1fr] md:gap-y-0 md:px-0">
-          <div className="flex justify-start md:justify-center">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-y-6 lg:grid-cols-[1fr_minmax(0,38rem)_1fr] lg:gap-x-10 lg:gap-y-0">
+          <div className="flex justify-start lg:justify-center">
             <Initial letter={left} side="left" />
           </div>
-          <div className="flex justify-end md:order-3 md:justify-center">
+          <div className="flex justify-end lg:order-3 lg:justify-center">
             <Initial letter={right} side="right" />
           </div>
 
           <div
             data-paras
-            className="col-span-2 mx-auto flex w-full max-w-[26rem] flex-col gap-[1.1em] md:order-2 md:col-span-1 md:max-w-none"
+            className="col-span-2 mx-auto flex w-full max-w-[38rem] flex-col gap-5 lg:order-2 lg:col-span-1 lg:max-w-none"
           >
             {CONTENT.paragraphs.map((text) => (
-              <p
-                key={text}
-                data-para
-                className={`hyphens-none [text-align-last:justify] [text-align:justify] ${SMALL} ${MASK_PAD}`}
-              >
+              <p key={text} data-para className={`hyphens-auto text-left ${READ} ${MASK_PAD}`}>
                 {text}
               </p>
             ))}
@@ -400,12 +353,7 @@ const Index: FC = () => {
       </section>
 
       {/* 3 · FESTA */}
-      <section
-        id="festa"
-        tabIndex={-1}
-        data-hide
-        className="flex min-h-svh flex-col justify-center focus:outline-none"
-      >
+      <section id="festa" tabIndex={-1} data-hide className="pt-6 focus:outline-none md:pt-10">
         <h2 className={`text-center ${GIANT}`}>
           {CONTENT.headline.map((line) => (
             <GiantLine key={line} text={line} />
@@ -417,4 +365,4 @@ const Index: FC = () => {
   );
 };
 
-export default Index;
+export default Appx;
