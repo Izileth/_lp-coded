@@ -4,6 +4,7 @@ import { gsap, ScrollTrigger, SplitText, useGSAP } from "./lib/gsap";
 
 /* ========================= EDITE AQUI ========================= */
 const CONTENT = {
+  name: "Kawak",          // Nome exibido no hero principal
   initials: ["K", "C"] as const,
   cropped: "PARABÉNS",
   headline: ["NO SEU", "GRANDE DIA"] as const,
@@ -52,14 +53,13 @@ const READ =
 const MASK_PAD = "[&_.split-mask]:py-[0.18em] [&_.split-mask]:-my-[0.18em]";
 
 /* ------------------------------------------------------------------ */
-/*  PARABÉNS cortado: só mostra a borda superior ou inferior da letra  */
+/*  PARABÉNS quase completo — apenas as extremidades levemente cortadas */
 /* ------------------------------------------------------------------ */
 const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) => {
   /*
-   * Estratégia sem variável CSS:
-   * - Container tem altura fixa (px) por breakpoint — suficiente para ver
-   *   o topo ou o rodapé das letras Anton sem sobreposição.
-   * - A palavra é posicionada com translate para mostrar apenas a fatia certa.
+   * Altura ≈ 92% da linha real → corta ~8% da borda externa.
+   * Nenhum translate além disso: a palavra aparece quase inteira,
+   * com um corte sutil e quase imperceptível nas bordas.
    */
   const isTop = edge === "top";
   return (
@@ -68,12 +68,14 @@ const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) =>
       data-sliver={edge}
       className={[
         "w-full overflow-hidden",
+        // alturas ajustadas: quase o tamanho da fonte real, cortando só as bordas
         isTop
-          ? "h-14 sm:h-20 md:h-28 lg:h-36 xl:h-44"
-          : "h-16 sm:h-24 md:h-32 lg:h-40 xl:h-52",
+          ? "h-[4.6rem] sm:h-[7.4rem] md:h-[10.2rem] lg:h-[13.9rem] xl:h-[16.6rem]"
+          : "h-[4.6rem] sm:h-[7.4rem] md:h-[10.2rem] lg:h-[13.9rem] xl:h-[16.6rem]",
       ].join(" ")}
     >
-      <div className={isTop ? '-translate-y-[0.08em]' : 'translate-y-[0.08em]'  }>
+      {/* translate sutil apenas para alinhar topo vs rodapé */}
+      <div className={isTop ? "-translate-y-[0.08em]" : "translate-y-[0.08em]"}>
         <span
           data-word
           className={`block w-full text-center text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[15rem] xl:text-[18rem] ${DISPLAY_WORD}`}
@@ -189,7 +191,7 @@ const Appx: FC = () => {
             // Movimento reduzido: tudo estático e legível
             if (reduce) return cleanup;
 
-            /* ===== 1 · ABERTURA ===== */
+            /* ===== 1 · ABERTURA — hero name + PARABÉNS top ===== */
             const navSplit = SplitText.create(all("[data-nav] a"), {
               type: "lines",
               mask: "lines",
@@ -203,12 +205,30 @@ const Appx: FC = () => {
                 duration: 1.4,
                 ease: "poster",
               }, 0.1)
-              .from(navSplit.lines, { yPercent: 110, duration: 0.9, stagger: 0.08 }, 0.7);
+              // Nome do aniversariante: fade + rise
+              .from(one("[data-hero-name]"), {
+                yPercent: 40,
+                opacity: 0,
+                duration: 1.1,
+                ease: "poster",
+              }, 0.3)
+              // Links da nav
+              .from(navSplit.lines, { yPercent: 110, duration: 0.9, stagger: 0.08 }, 0.8);
 
             /* ===== 2 · HOMENAGEM ===== */
             const homenagem = one("#homenagem");
-            const leftInitial = one("[data-initial='left']");
-            const rightInitial = one("[data-initial='right']");
+
+            /*
+             * FIX: o layout duplica as iniciais (uma visível no md+, outra no mobile).
+             * querySelector retorna o primeiro no DOM — que pode estar hidden.
+             * Pegamos o nó visível no breakpoint atual via offsetParent.
+             */
+            const pickVisible = (sel: string): HTMLElement => {
+              const nodes = gsap.utils.toArray<HTMLElement>(sel, el);
+              return nodes.find((n) => n.offsetParent !== null) ?? nodes[0];
+            };
+            const leftInitial  = pickVisible("[data-initial='left']");
+            const rightInitial = pickVisible("[data-initial='right']");
             const OPEN = "inset(-30% -30% -30% -30%)";
 
             gsap.fromTo(
@@ -346,18 +366,37 @@ const Appx: FC = () => {
       </nav>
 
       {/* ════════════════════════════════════════
-          SEÇÃO 1 · INÍCIO
+          SEÇÃO 1 · INÍCIO — Hero com nome do aniversariante
           ════════════════════════════════════════ */}
       <section id="topo" tabIndex={-1} data-hide className="focus:outline-none">
 
-        {/* PARABÉNS — fatia superior (topo cortado) */}
+        {/* PARABÉNS — faixa topo, quase completa */}
         <Sliver text={CONTENT.cropped} edge="top" />
 
-        {/* ── Barra de navegação ── */}
-        <div className="border-t border-white/20 bg-brand">
+        {/* ── Hero central: nome em fonte script ── */}
+        <div className="flex flex-col items-center gap-3 px-6 py-10 text-center md:gap-5 md:py-14 lg:py-20">
+          {/* Rótulo discreto acima */}
+          <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white/60 sm:text-sm">
+            Feliz Aniversário
+          </p>
+
+          {/* Nome — fonte script grande, animado pelo GSAP */}
+          <h1
+            data-hero-name
+            className="font-script text-[4.5rem] font-normal italic leading-none text-white sm:text-[6rem] md:text-[8rem] lg:text-[10rem] xl:text-[12rem]"
+          >
+            {CONTENT.name}
+          </h1>
+
+          {/* Separador decorativo */}
+          <div className="mt-2 h-px w-16 bg-white/30 md:w-24" />
+        </div>
+
+        {/* ── Navegação compacta abaixo do hero ── */}
+        <div className="border-t border-white/20">
           <nav data-nav aria-label="Principal">
             <ul
-              className={`flex items-center justify-center gap-8 px-6 py-5 sm:gap-12 md:gap-16 md:py-6 ${NAV_ITEM} ${MASK_PAD}`}
+              className={`flex items-center justify-center gap-8 px-6 py-4 sm:gap-12 md:gap-16 md:py-5 ${NAV_ITEM} ${MASK_PAD}`}
             >
               {CONTENT.nav.map((item) => (
                 <li key={item.label}>
@@ -452,8 +491,6 @@ const Appx: FC = () => {
           </h2>
         </div>
 
-        {/* PARABÉNS — fatia inferior (rodapé cortado) */}
-        <Sliver text={CONTENT.cropped} edge="bottom" />
       </section>
     </main>
   );
