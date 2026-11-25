@@ -24,43 +24,44 @@ const SECTIONS = [
 ] as const;
 /* ============================================================== */
 
-/* Títulos gigantes (tamanho controlado por --fs no <main>) */
+/* Títulos gigantes — fonte responsiva com clamp para evitar overflow */
 const GIANT =
-  "font-display uppercase text-white text-[length:var(--fs)] leading-[0.82] tracking-[-0.01em]";
+  "font-display uppercase text-white text-[length:var(--fs)] leading-[1] tracking-[-0.01em]";
 
 /* Menu: pequeno, mas confortável de ler */
 const NAV_TEXT =
-  "font-sans text-sm font-semibold uppercase leading-snug tracking-[0.06em] text-white md:text-base";
+  "font-sans text-sm font-semibold uppercase tracking-[0.1em] text-white md:text-base";
 
 /* Corpo de leitura */
 const READ =
   "font-sans text-base font-medium leading-[1.65] text-white md:text-lg [text-wrap:pretty]";
 
 /* Folga na máscara do SplitText para não cortar acentos */
-const MASK_PAD = "[&_.split-mask]:py-[0.2em] [&_.split-mask]:-my-[0.2em]";
+const MASK_PAD = "[&_.split-mask]:py-[0.15em] [&_.split-mask]:-my-[0.15em]";
 
 /* ---------- Palavra gigante cortada ---------- */
 const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) => (
   <div
     aria-hidden="true"
     data-sliver={edge}
-    className={`overflow-hidden ${
+    className={`w-full overflow-hidden ${
       edge === "top"
-        ? "h-[calc(var(--fs)*0.28)]"
-        : "h-[calc(var(--fs)*0.38)] pt-[0.14em]"
+        ? "h-[calc(var(--fs)*0.32)]"
+        : "h-[calc(var(--fs)*0.42)]"
     }`}
   >
-    <div className={edge === "top" ? "-translate-y-[66%]" : ""}>
-      <span data-word className={`block text-center ${GIANT}`}>
+    <div className={edge === "top" ? "-translate-y-[72%]" : "translate-y-[-58%]"}>
+      <span data-word className={`block w-full text-center ${GIANT}`}>
         {text}
       </span>
     </div>
   </div>
 );
 
+/* Linha do headline com overflow seguro — sem margem negativa */
 const GiantLine: FC<{ text: string }> = ({ text }) => (
-  <span data-line className="-my-[0.12em] block overflow-hidden py-[0.12em]">
-    <span data-line-inner className="block">
+  <span data-line className="block overflow-hidden py-[0.05em]">
+    <span data-line-inner className="block leading-[1.05]">
       {text}
     </span>
   </span>
@@ -70,7 +71,7 @@ const Initial: FC<{ letter: string; side: "left" | "right" }> = ({ letter, side 
   <span
     aria-hidden="true"
     data-initial={side}
-    className="block select-none font-script text-[clamp(4.5rem,18vw,8rem)] font-normal italic leading-none text-white lg:text-[clamp(6rem,10vw,10rem)]"
+    className="block select-none font-script text-[clamp(4rem,15vw,8rem)] font-normal italic leading-none text-white lg:text-[clamp(5rem,9vw,10rem)]"
   >
     {letter}
   </span>
