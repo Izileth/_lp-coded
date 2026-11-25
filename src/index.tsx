@@ -1,9 +1,10 @@
 import { useRef, type FC } from "react";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "./lib/gsap";
 
+
 /* ========================= EDITE AQUI ========================= */
 const CONTENT = {
-  initials: ["N", "S"] as const,
+  initials: ["K", "C"] as const,
   cropped: "PARABÉNS",
   headline: ["NO SEU", "GRANDE DIA"] as const,
   nav: [
@@ -22,56 +23,90 @@ const SECTIONS = [
   { id: "homenagem", label: "Homenagem" },
   { id: "festa", label: "Festa" },
 ] as const;
+
+
 /* ============================================================== */
 
-/* Títulos gigantes — fonte responsiva com clamp para evitar overflow */
-const GIANT =
-  "font-display uppercase text-white text-[length:var(--fs)] leading-[1] tracking-[-0.01em]";
+/*
+ * TOKENS TIPOGRÁFICOS
+ * Sem --fs nem clamp: tamanhos explícitos por breakpoint via Tailwind.
+ */
 
-/* Menu: pequeno, mas confortável de ler */
-const NAV_TEXT =
-  "font-sans text-sm font-semibold uppercase tracking-[0.1em] text-white md:text-base";
+/** Palavra decorativa gigante no topo/rodapé (PARABÉNS cortado) */
+const DISPLAY_WORD =
+  "font-display uppercase text-white tracking-tight leading-none select-none";
 
-/* Corpo de leitura */
+/** Headline de seção (NO SEU / GRANDE DIA) */
+const HEADLINE =
+  "font-display uppercase text-white leading-[1.05] tracking-tight";
+
+/** Nav links */
+const NAV_ITEM =
+  "font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white sm:text-sm md:text-base";
+
+/** Corpo de texto */
 const READ =
-  "font-sans text-base font-medium leading-[1.65] text-white md:text-lg [text-wrap:pretty]";
+  "font-sans text-base font-medium leading-relaxed text-white/90 md:text-lg [text-wrap:pretty]";
 
-/* Folga na máscara do SplitText para não cortar acentos */
-const MASK_PAD = "[&_.split-mask]:py-[0.15em] [&_.split-mask]:-my-[0.15em]";
+/** Padding vertical da máscara SplitText (evita corte de acentos) */
+const MASK_PAD = "[&_.split-mask]:py-[0.18em] [&_.split-mask]:-my-[0.18em]";
 
-/* ---------- Palavra gigante cortada ---------- */
-const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) => (
-  <div
-    aria-hidden="true"
-    data-sliver={edge}
-    className={`w-full overflow-hidden ${
-      edge === "top"
-        ? "h-[calc(var(--fs)*0.32)]"
-        : "h-[calc(var(--fs)*0.42)]"
-    }`}
-  >
-    <div className={edge === "top" ? "-translate-y-[72%]" : "translate-y-[-58%]"}>
-      <span data-word className={`block w-full text-center ${GIANT}`}>
-        {text}
-      </span>
+/* ------------------------------------------------------------------ */
+/*  PARABÉNS cortado: só mostra a borda superior ou inferior da letra  */
+/* ------------------------------------------------------------------ */
+const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) => {
+  /*
+   * Estratégia sem variável CSS:
+   * - Container tem altura fixa (px) por breakpoint — suficiente para ver
+   *   o topo ou o rodapé das letras Anton sem sobreposição.
+   * - A palavra é posicionada com translate para mostrar apenas a fatia certa.
+   */
+  const isTop = edge === "top";
+  return (
+    <div
+      aria-hidden="true"
+      data-sliver={edge}
+      className={[
+        "w-full overflow-hidden",
+        isTop
+          ? "h-14 sm:h-20 md:h-28 lg:h-36 xl:h-44"
+          : "h-16 sm:h-24 md:h-32 lg:h-40 xl:h-52",
+      ].join(" ")}
+    >
+      <div className={isTop ? "-translate-y-[68%]" : "-translate-y-[55%]"}>
+        <span
+          data-word
+          className={`block w-full text-center text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[15rem] xl:text-[18rem] ${DISPLAY_WORD}`}
+        >
+          {text}
+        </span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-/* Linha do headline com overflow seguro — sem margem negativa */
+/* ------------------------------------------------------------------ */
+/*  Linha do headline — overflow seguro, sem margens negativas         */
+/* ------------------------------------------------------------------ */
 const GiantLine: FC<{ text: string }> = ({ text }) => (
-  <span data-line className="block overflow-hidden py-[0.05em]">
-    <span data-line-inner className="block leading-[1.05]">
+  <span data-line className="block overflow-hidden">
+    <span
+      data-line-inner
+      className={`block py-1 text-[2.8rem] sm:text-[4rem] md:text-[5.5rem] lg:text-[7rem] xl:text-[8.5rem] ${HEADLINE}`}
+    >
       {text}
     </span>
   </span>
 );
 
+/* ------------------------------------------------------------------ */
+/*  Iniciais decorativas em script                                     */
+/* ------------------------------------------------------------------ */
 const Initial: FC<{ letter: string; side: "left" | "right" }> = ({ letter, side }) => (
   <span
     aria-hidden="true"
     data-initial={side}
-    className="block select-none font-script text-[clamp(4rem,15vw,8rem)] font-normal italic leading-none text-white lg:text-[clamp(5rem,9vw,10rem)]"
+    className="block select-none font-script text-[5rem] font-normal italic leading-none text-white sm:text-[7rem] md:text-[9rem] lg:text-[11rem]"
   >
     {letter}
   </span>
@@ -283,10 +318,15 @@ const Appx: FC = () => {
     <main
       ref={root}
       data-pending=""
-      className="w-full overflow-x-clip bg-brand text-white [--fs:clamp(2.5rem,15vw,14rem)] md:[--fs:clamp(3rem,13vw,14rem)]"
+      className="w-full overflow-x-hidden bg-brand text-white"
     >
-      {/* ── Indicador lateral de seção ── */}
-      <nav aria-label="Seções" className="fixed right-3 top-1/2 z-50 -translate-y-1/2 md:right-6">
+      {/* ════════════════════════════════════════
+          INDICADOR LATERAL DE SEÇÃO (pontinhos)
+          ════════════════════════════════════════ */}
+      <nav
+        aria-label="Seções"
+        className="fixed right-3 top-1/2 z-50 -translate-y-1/2 md:right-5"
+      >
         <ul className="flex flex-col gap-4">
           {SECTIONS.map(({ id, label }, i) => (
             <li key={id}>
@@ -298,83 +338,121 @@ const Appx: FC = () => {
                 aria-current={i === 0 ? "true" : undefined}
                 className="group flex h-6 w-6 items-center justify-center focus-visible:outline-none"
               >
-                <span className="block h-2 w-2 rounded-full border border-white/70 bg-transparent transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-brand group-data-[active=true]:h-3 group-data-[active=true]:w-3 group-data-[active=true]:border-white group-data-[active=true]:bg-white" />
+                <span className="block h-2.5 w-2.5 rounded-full border border-white/60 bg-transparent transition-all duration-300 group-hover:border-white group-hover:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-white group-data-[active=true]:border-white group-data-[active=true]:bg-white group-data-[active=true]:scale-110" />
               </a>
             </li>
           ))}
         </ul>
       </nav>
 
-      {/* ── 1 · INÍCIO ── */}
+      {/* ════════════════════════════════════════
+          SEÇÃO 1 · INÍCIO
+          ════════════════════════════════════════ */}
       <section id="topo" tabIndex={-1} data-hide className="focus:outline-none">
-        {/* Fatia superior de PARABÉNS */}
+
+        {/* PARABÉNS — fatia superior (topo cortado) */}
         <Sliver text={CONTENT.cropped} edge="top" />
 
-        {/* Navegação principal — layout horizontal em qualquer tela */}
-        <nav data-nav aria-label="Principal" className="border-t border-white/20">
-          <ul className={`flex items-center justify-center gap-6 px-4 py-5 ${NAV_TEXT} ${MASK_PAD} sm:gap-10 md:gap-14 md:py-7`}>
-            {CONTENT.nav.map((item) => (
-              <li key={item.label}>
-                <a
-                  href={item.href}
-                  className="relative py-1 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-300 hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/* ── Barra de navegação ── */}
+        <div className="border-t border-white/20 bg-brand">
+          <nav data-nav aria-label="Principal">
+            <ul
+              className={`flex items-center justify-center gap-8 px-6 py-5 sm:gap-12 md:gap-16 md:py-6 ${NAV_ITEM} ${MASK_PAD}`}
+            >
+              {CONTENT.nav.map((item) => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className={[
+                      "relative inline-block pb-0.5",
+                      "after:absolute after:bottom-0 after:left-0 after:h-px after:w-full",
+                      "after:origin-left after:scale-x-0 after:bg-white",
+                      "after:transition-transform after:duration-300",
+                      "hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100",
+                    ].join(" ")}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </section>
 
-      {/* ── 2 · HOMENAGEM ── */}
+      {/* ════════════════════════════════════════
+          SEÇÃO 2 · HOMENAGEM
+          ════════════════════════════════════════ */}
       <section
         id="homenagem"
         tabIndex={-1}
         data-hide
-        className="px-6 py-16 focus:outline-none md:px-12 md:py-24"
+        className="focus:outline-none"
       >
-        {/* Grid: iniciais nas pontas, texto no centro */}
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-[auto_1fr_auto] md:gap-12 lg:gap-20">
-          {/* Inicial esquerda */}
-          <div className="hidden justify-center md:flex">
-            <Initial letter={left} side="left" />
-          </div>
+        {/*
+         * Layout:
+         *  Mobile  → tudo empilhado: iniciais em linha, depois parágrafos
+         *  Tablet+ → grade 3 colunas: [inicial] [texto] [inicial]
+         */}
+        <div className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 lg:px-16 lg:py-32">
 
-          {/* Parágrafos centrais */}
-          <div
-            data-paras
-            className="mx-auto flex w-full max-w-[42rem] flex-col gap-6"
-          >
-            {/* Iniciais em mobile (acima do texto) */}
-            <div className="flex items-center justify-between md:hidden">
+          {/* Grid externo */}
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2.5fr)_minmax(0,1fr)] md:items-center md:gap-8 lg:gap-14">
+
+            {/* Inicial esquerda — só no md+ */}
+            <div className="hidden md:flex md:justify-center md:items-center">
               <Initial letter={left} side="left" />
-              <Initial letter={right} side="right" />
             </div>
 
-            {CONTENT.paragraphs.map((text) => (
-              <p key={text} data-para className={`hyphens-auto ${READ} ${MASK_PAD}`}>
-                {text}
-              </p>
-            ))}
-          </div>
+            {/* Coluna central: iniciais mobile + parágrafos */}
+            <div className="flex flex-col gap-8">
+              {/* Iniciais em mobile: exibidas horizontalmente acima do texto */}
+              <div className="flex items-center justify-around md:hidden">
+                <Initial letter={left} side="left" />
+                <Initial letter={right} side="right" />
+              </div>
 
-          {/* Inicial direita */}
-          <div className="hidden justify-center md:flex">
-            <Initial letter={right} side="right" />
+              {/* Parágrafos */}
+              <div data-paras className="flex flex-col gap-6">
+                {CONTENT.paragraphs.map((text) => (
+                  <p
+                    key={text}
+                    data-para
+                    className={`hyphens-auto ${READ} ${MASK_PAD}`}
+                  >
+                    {text}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            {/* Inicial direita — só no md+ */}
+            <div className="hidden md:flex md:justify-center md:items-center">
+              <Initial letter={right} side="right" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── 3 · FESTA ── */}
-      <section id="festa" tabIndex={-1} data-hide className="pt-8 focus:outline-none md:pt-14">
-        {/* Headline "NO SEU / GRANDE DIA" — sem margens negativas */}
-        <h2 className={`overflow-hidden text-center ${GIANT}`}>
-          {CONTENT.headline.map((line) => (
-            <GiantLine key={line} text={line} />
-          ))}
-        </h2>
-        {/* Fatia inferior de PARABÉNS */}
+      {/* ════════════════════════════════════════
+          SEÇÃO 3 · FESTA
+          ════════════════════════════════════════ */}
+      <section
+        id="festa"
+        tabIndex={-1}
+        data-hide
+        className="focus:outline-none"
+      >
+        {/* Headline "NO SEU / GRANDE DIA" — centrado, sem overflow */}
+        <div className="overflow-hidden px-4 pt-10 pb-6 text-center md:pt-16 md:pb-10">
+          <h2 className="inline-block">
+            {CONTENT.headline.map((line) => (
+              <GiantLine key={line} text={line} />
+            ))}
+          </h2>
+        </div>
+
+        {/* PARABÉNS — fatia inferior (rodapé cortado) */}
         <Sliver text={CONTENT.cropped} edge="bottom" />
       </section>
     </main>
