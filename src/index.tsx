@@ -73,7 +73,7 @@ const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) =>
           : "h-16 sm:h-24 md:h-32 lg:h-40 xl:h-52",
       ].join(" ")}
     >
-      <div className={isTop ? "-translate-y-[68%]" : "-translate-y-[55%]"}>
+      <div className={isTop ? '-translate-y-[0.08em]' : 'translate-y-[0.08em]'  }>
         <span
           data-word
           className={`block w-full text-center text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[15rem] xl:text-[18rem] ${DISPLAY_WORD}`}
