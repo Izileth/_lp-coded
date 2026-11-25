@@ -1,10 +1,10 @@
 
-
+import Index from './index.tsx'
 function App() {
 
   return (
     <>
-    <h1>Soap</h1>
+    <Index />
     </>
   )
 }
