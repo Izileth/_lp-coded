@@ -4,10 +4,10 @@ import { gsap, ScrollTrigger, SplitText, useGSAP } from "./lib/gsap";
 
 /* ========================= EDITE AQUI ========================= */
 const CONTENT = {
-  name: "Kawak",          // Nome exibido no hero principal
+  name: "Kawe Kleber",          // Nome exibido no hero principal
   initials: ["K", "C"] as const,
   cropped: "PARABÉNS",
-  headline: ["NO SEU", "GRANDE DIA"] as const,
+  headline: ["FEITO PELO", "SEU IRMÂO"] as const,
   nav: [
     { label: "HOMENAGEM", href: "#homenagem" },
     { label: "FESTA", href: "#festa" },
@@ -41,9 +41,6 @@ const DISPLAY_WORD =
 const HEADLINE =
   "font-display uppercase text-white leading-[1.05] tracking-tight";
 
-/** Nav links */
-const NAV_ITEM =
-  "font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white sm:text-sm md:text-base";
 
 /** Corpo de texto */
 const READ =
@@ -75,7 +72,7 @@ const Sliver: FC<{ text: string; edge: "top" | "bottom" }> = ({ text, edge }) =>
       ].join(" ")}
     >
       {/* translate sutil apenas para alinhar topo vs rodapé */}
-      <div className={isTop ? "-translate-y-[0.08em]" : "translate-y-[0.08em]"}>
+      <div className={isTop ? "-translate-y-[0.00em]" : "translate-y-[0.00em]"}>
         <span
           data-word
           className={`block w-full text-center text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[15rem] xl:text-[18rem] ${DISPLAY_WORD}`}
@@ -392,7 +389,8 @@ const Appx: FC = () => {
           <div className="mt-2 h-px w-16 bg-white/30 md:w-24" />
         </div>
 
-        {/* ── Navegação compacta abaixo do hero ── */}
+        {/* ── Navegação compacta abaixo do hero ── 
+        
         <div className="border-t border-white/20">
           <nav data-nav aria-label="Principal">
             <ul
@@ -417,6 +415,8 @@ const Appx: FC = () => {
             </ul>
           </nav>
         </div>
+        
+        */}
       </section>
 
       {/* ════════════════════════════════════════
