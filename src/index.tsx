@@ -1,5 +1,5 @@
 import { useRef, type FC } from "react";
-import { gsap, ScrollTrigger, SplitText, useGSAP } from "./lib/gsap";
+import { gsap, SplitText, useGSAP } from "./lib/gsap";
 
 
 /* ========================= EDITE AQUI ========================= */
@@ -18,13 +18,6 @@ const CONTENT = {
     "Ao olharmos para trás, depois de tantos anos, sentamos com ele para entender o que passa em seu coração neste novo ciclo. Uma jornada que até aqui entregou muitas conquistas, viagens, brincadeiras, lutas vencidas, memórias inesquecíveis e uma amizade que não cabe em nenhum cartão de aniversário.",
   ],
 };
-
-const SECTIONS = [
-  { id: "topo", label: "Início" },
-  { id: "homenagem", label: "Homenagem" },
-  { id: "festa", label: "Festa" },
-] as const;
-
 
 /* ============================================================== */
 
@@ -98,19 +91,6 @@ const GiantLine: FC<{ text: string }> = ({ text }) => (
   </span>
 );
 
-/* ------------------------------------------------------------------ */
-/*  Iniciais decorativas em script                                     */
-/* ------------------------------------------------------------------ */
-const Initial: FC<{ letter: string; side: "left" | "right" }> = ({ letter, side }) => (
-  <span
-    aria-hidden="true"
-    data-initial={side}
-    className="block select-none font-script text-[5rem] font-normal italic leading-none text-white sm:text-[7rem] md:text-[9rem] lg:text-[11rem]"
-  >
-    {letter}
-  </span>
-);
-
 const Appx: FC = () => {
   const root = useRef<HTMLElement>(null);
   const [left, right] = CONTENT.initials;
@@ -145,25 +125,6 @@ const Appx: FC = () => {
               el.querySelector<T>(s)!;
             const all = (s: string) => gsap.utils.toArray<HTMLElement>(s, el);
 
-            /* ===== Pontinhos laterais ===== */
-            const dots = all("a[data-dot]");
-            const setActive = (id: string) =>
-              dots.forEach((a) => {
-                const on = a.dataset.dot === id;
-                a.dataset.active = String(on);
-                if (on) a.setAttribute("aria-current", "true");
-                else a.removeAttribute("aria-current");
-              });
-
-            SECTIONS.forEach(({ id }) =>
-              ScrollTrigger.create({
-                trigger: `#${id}`,
-                start: "top 50%",
-                end: "bottom 50%",
-                onToggle: (self) => self.isActive && setActive(id),
-              }),
-            );
-
             /* ===== Rolagem suave para âncoras ===== */
             const onClick = (e: MouseEvent) => {
               const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
@@ -175,7 +136,7 @@ const Appx: FC = () => {
               gsap.to(window, {
                 scrollTo: { y: target, autoKill: true },
                 duration: reduce ? 0 : 1.2,
-                ease: "poster",
+                ease: "power2.inOut",
                 onComplete: () => {
                   history.pushState(null, "", `#${id}`);
                   target.focus({ preventScroll: true });
@@ -185,10 +146,9 @@ const Appx: FC = () => {
             document.addEventListener("click", onClick);
             const cleanup = () => document.removeEventListener("click", onClick);
 
-            // Movimento reduzido: tudo estático e legível
             if (reduce) return cleanup;
 
-            /* ===== 1 · ABERTURA — hero name + PARABÉNS top ===== */
+            /* ===== 1 · ABERTURA — PARABÉNS top + nome ===== */
             const navSplit = SplitText.create(all("[data-nav] a"), {
               type: "lines",
               mask: "lines",
@@ -196,103 +156,111 @@ const Appx: FC = () => {
             });
 
             gsap
-              .timeline({ defaults: { ease: "editorial" } })
+              .timeline({ defaults: { ease: "power3.out" } })
               .from(one("[data-sliver='top'] [data-word]"), {
                 yPercent: 105,
                 duration: 1.4,
-                ease: "poster",
+                ease: "power4.out",
               }, 0.1)
-              // Nome do aniversariante: fade + rise
               .from(one("[data-hero-name]"), {
                 yPercent: 40,
                 opacity: 0,
                 duration: 1.1,
-                ease: "poster",
+                ease: "power3.out",
               }, 0.3)
-              // Links da nav
               .from(navSplit.lines, { yPercent: 110, duration: 0.9, stagger: 0.08 }, 0.8);
 
-            /* ===== 2 · HOMENAGEM ===== */
+            /* ===== 2 · HOMENAGEM — scrub progressivo ===== */
             const homenagem = one("#homenagem");
 
-            /*
-             * FIX: o layout duplica as iniciais (uma visível no md+, outra no mobile).
-             * querySelector retorna o primeiro no DOM — que pode estar hidden.
-             * Pegamos o nó visível no breakpoint atual via offsetParent.
-             */
-            const pickVisible = (sel: string): HTMLElement => {
-              const nodes = gsap.utils.toArray<HTMLElement>(sel, el);
-              return nodes.find((n) => n.offsetParent !== null) ?? nodes[0];
-            };
-            const leftInitial  = pickVisible("[data-initial='left']");
-            const rightInitial = pickVisible("[data-initial='right']");
-            const OPEN = "inset(-30% -30% -30% -30%)";
+            // Iniciais: animam conforme o scroll entra na seção (scrub)
+            all("[data-initial]").forEach((node) => {
+              const side = (node as HTMLElement).dataset.initial;
+              const fromX = side === "left" ? "-8vw" : "8vw";
+              gsap.fromTo(
+                node,
+                { opacity: 0, x: fromX },
+                {
+                  opacity: 1,
+                  x: 0,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger: homenagem,
+                    start: "top 90%",
+                    end: "top 30%",
+                    scrub: 1.2,
+                  },
+                },
+              );
+            });
 
-            gsap.fromTo(
-              leftInitial,
-              { clipPath: "inset(-30% 100% -30% -30%)", x: "-6vw" },
-              {
-                clipPath: OPEN,
-                x: 0,
-                duration: 1.6,
-                ease: "poster",
-                scrollTrigger: { trigger: homenagem, start: "top 75%", once: true },
-              },
-            );
-            gsap.fromTo(
-              rightInitial,
-              { clipPath: "inset(-30% -30% -30% 100%)", x: "6vw" },
-              {
-                clipPath: OPEN,
-                x: 0,
-                duration: 1.6,
-                delay: 0.12,
-                ease: "poster",
-                scrollTrigger: { trigger: homenagem, start: "top 75%", once: true },
-              },
-            );
-
-            // Parallax só no desktop e bem discreto
+            // Parallax vertical nas iniciais do desktop (discreto)
             if (wide) {
-              gsap.to(leftInitial, {
-                yPercent: -10,
-                ease: "none",
-                scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
-              });
-              gsap.to(rightInitial, {
-                yPercent: 10,
-                ease: "none",
-                scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
-              });
+              all("[data-initial='left']").forEach((node) =>
+                gsap.to(node, {
+                  yPercent: -12,
+                  ease: "none",
+                  scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
+                }),
+              );
+              all("[data-initial='right']").forEach((node) =>
+                gsap.to(node, {
+                  yPercent: 12,
+                  ease: "none",
+                  scrollTrigger: { trigger: homenagem, start: "top bottom", end: "bottom top", scrub: true },
+                }),
+              );
             }
 
-            // Parágrafos linha a linha (re-divide ao redimensionar)
+            // Parágrafos: cada linha sobe conforme o scroll avança (scrub progressivo)
             SplitText.create(all("[data-para]"), {
               type: "lines",
               mask: "lines",
               maskClass: "split-mask",
               autoSplit: true,
               onSplit: (self) =>
-                gsap.from(self.lines, {
-                  yPercent: 110,
-                  duration: 1.1,
-                  ease: "editorial",
-                  stagger: 0.04,
-                  scrollTrigger: { trigger: homenagem, start: "top 70%", once: true },
-                }),
+                self.lines.forEach((line, i) =>
+                  gsap.fromTo(
+                    line,
+                    { yPercent: 110, opacity: 0 },
+                    {
+                      yPercent: 0,
+                      opacity: 1,
+                      ease: "none",
+                      scrollTrigger: {
+                        trigger: line,
+                        start: "top 95%",
+                        end: "top 55%",
+                        scrub: 0.8 + i * 0.05,
+                      },
+                    },
+                  ),
+                ),
             });
 
-            /* ===== 3 · FESTA ===== */
+            /* ===== 3 · FESTA — headline scrub ===== */
             const festa = one("#festa");
 
-            gsap.from(all("[data-line-inner]"), {
-              yPercent: 110,
-              duration: 1.3,
-              ease: "editorial",
-              stagger: 0.12,
-              scrollTrigger: { trigger: festa, start: "top 70%", once: true },
+            // Cada linha do headline: sobe com scrub individual
+            all("[data-line-inner]").forEach((inner, i) => {
+              gsap.fromTo(
+                inner,
+                { yPercent: 110, opacity: 0 },
+                {
+                  yPercent: 0,
+                  opacity: 1,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger: festa,
+                    start: "top 85%",
+                    end: `top ${45 - i * 10}%`,
+                    scrub: 1,
+                  },
+                },
+              );
             });
 
+            // Slide horizontal das linhas com scrub
             const slide = wide ? 8 : 4;
             all("[data-line]").forEach((line, i) => {
               gsap.fromTo(
@@ -306,13 +274,14 @@ const Appx: FC = () => {
               );
             });
 
+            // PARABÉNS rodapé sobe com scrub
             gsap.fromTo(
               one("[data-sliver='bottom'] [data-word]"),
-              { yPercent: 100 },
+              { yPercent: 60 },
               {
                 yPercent: 0,
                 ease: "none",
-                scrollTrigger: { trigger: festa, start: "top 70%", end: "bottom bottom", scrub: true },
+                scrollTrigger: { trigger: festa, start: "top 80%", end: "bottom bottom", scrub: true },
               },
             );
 
@@ -338,31 +307,6 @@ const Appx: FC = () => {
       className="w-full overflow-x-hidden bg-brand text-white"
     >
       {/* ════════════════════════════════════════
-          INDICADOR LATERAL DE SEÇÃO (pontinhos)
-          ════════════════════════════════════════ */}
-      <nav
-        aria-label="Seções"
-        className="fixed right-3 top-1/2 z-50 -translate-y-1/2 md:right-5"
-      >
-        <ul className="flex flex-col gap-4">
-          {SECTIONS.map(({ id, label }, i) => (
-            <li key={id}>
-              <a
-                href={`#${id}`}
-                data-dot={id}
-                data-active={i === 0}
-                aria-label={label}
-                aria-current={i === 0 ? "true" : undefined}
-                className="group flex h-6 w-6 items-center justify-center focus-visible:outline-none"
-              >
-                <span className="block h-2.5 w-2.5 rounded-full border border-white/60 bg-transparent transition-all duration-300 group-hover:border-white group-hover:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-white group-data-[active=true]:border-white group-data-[active=true]:bg-white group-data-[active=true]:scale-110" />
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* ════════════════════════════════════════
           SEÇÃO 1 · INÍCIO — Hero com nome do aniversariante
           ════════════════════════════════════════ */}
       <section id="topo" tabIndex={-1} data-hide className="focus:outline-none">
@@ -372,41 +316,27 @@ const Appx: FC = () => {
 
         {/* ── Hero central: nome em fonte script ── */}
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center md:gap-5 md:py-14 lg:py-20">
-          {/* Rótulo discreto acima */}
           <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white/60 sm:text-sm">
             Feliz Aniversário
           </p>
-
-          {/* Nome — fonte script grande, animado pelo GSAP */}
           <h1
             data-hero-name
             className="font-script text-[4.5rem] font-normal italic leading-none text-white sm:text-[6rem] md:text-[8rem] lg:text-[10rem] xl:text-[12rem]"
           >
             {CONTENT.name}
           </h1>
-
-          {/* Separador decorativo */}
           <div className="mt-2 h-px w-16 bg-white/30 md:w-24" />
         </div>
 
-        {/* ── Navegação compacta abaixo do hero ── 
-        
+        {/* ── Nav ── */}
         <div className="border-t border-white/20">
           <nav data-nav aria-label="Principal">
-            <ul
-              className={`flex items-center justify-center gap-8 px-6 py-4 sm:gap-12 md:gap-16 md:py-5 ${NAV_ITEM} ${MASK_PAD}`}
-            >
+            <ul className={`flex items-center justify-center gap-8 px-6 py-4 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white sm:gap-12 sm:text-sm md:gap-16 md:py-5 md:text-base ${MASK_PAD}`}>
               {CONTENT.nav.map((item) => (
                 <li key={item.label}>
                   <a
                     href={item.href}
-                    className={[
-                      "relative inline-block pb-0.5",
-                      "after:absolute after:bottom-0 after:left-0 after:h-px after:w-full",
-                      "after:origin-left after:scale-x-0 after:bg-white",
-                      "after:transition-transform after:duration-300",
-                      "hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100",
-                    ].join(" ")}
+                    className="relative inline-block pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-300 hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100"
                   >
                     {item.label}
                   </a>
@@ -415,8 +345,6 @@ const Appx: FC = () => {
             </ul>
           </nav>
         </div>
-        
-        */}
       </section>
 
       {/* ════════════════════════════════════════
@@ -429,45 +357,68 @@ const Appx: FC = () => {
         className="focus:outline-none"
       >
         {/*
-         * Layout:
-         *  Mobile  → tudo empilhado: iniciais em linha, depois parágrafos
-         *  Tablet+ → grade 3 colunas: [inicial] [texto] [inicial]
+         * LAYOUT MOBILE: a seção tem position:relative e as iniciais ficam
+         * absolutas atrás do texto — decorativas, espalhadas pelos cantos,
+         * com baixa opacidade para não disputar foco com o conteúdo.
+         *
+         * LAYOUT md+: grid 3 colunas normal [inicial · texto · inicial].
          */}
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 lg:px-16 lg:py-32">
+        <div className="relative mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 lg:px-16 lg:py-32">
 
-          {/* Grid externo */}
+          {/* ── Iniciais decorativas no mobile (absolutas, atrás do texto) ── */}
+          {/* Canto superior esquerdo */}
+          <span
+            aria-hidden="true"
+            data-initial="left"
+            className="pointer-events-none absolute -top-4 -left-2 select-none font-script text-[7rem] font-normal italic leading-none text-white/15 md:hidden"
+          >
+            {left}
+          </span>
+          {/* Canto inferior direito */}
+          <span
+            aria-hidden="true"
+            data-initial="right"
+            className="pointer-events-none absolute -bottom-4 -right-2 select-none font-script text-[7rem] font-normal italic leading-none text-white/15 md:hidden"
+          >
+            {right}
+          </span>
+
+          {/* ── Grid para md+ (iniciais visíveis nas laterais) ── */}
           <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2.5fr)_minmax(0,1fr)] md:items-center md:gap-8 lg:gap-14">
 
             {/* Inicial esquerda — só no md+ */}
-            <div className="hidden md:flex md:justify-center md:items-center">
-              <Initial letter={left} side="left" />
+            <div className="hidden md:flex md:items-center md:justify-center">
+              <span
+                aria-hidden="true"
+                data-initial="left"
+                className="block select-none font-script text-[9rem] font-normal italic leading-none text-white lg:text-[11rem]"
+              >
+                {left}
+              </span>
             </div>
 
-            {/* Coluna central: iniciais mobile + parágrafos */}
-            <div className="flex flex-col gap-8">
-              {/* Iniciais em mobile: exibidas horizontalmente acima do texto */}
-              <div className="flex items-center justify-around md:hidden">
-                <Initial letter={left} side="left" />
-                <Initial letter={right} side="right" />
-              </div>
-
-              {/* Parágrafos */}
-              <div data-paras className="flex flex-col gap-6">
-                {CONTENT.paragraphs.map((text) => (
-                  <p
-                    key={text}
-                    data-para
-                    className={`hyphens-auto ${READ} ${MASK_PAD}`}
-                  >
-                    {text}
-                  </p>
-                ))}
-              </div>
+            {/* Parágrafos centrais */}
+            <div data-paras className="relative z-10 flex flex-col gap-6">
+              {CONTENT.paragraphs.map((text) => (
+                <p
+                  key={text}
+                  data-para
+                  className={`hyphens-auto ${READ} ${MASK_PAD}`}
+                >
+                  {text}
+                </p>
+              ))}
             </div>
 
             {/* Inicial direita — só no md+ */}
-            <div className="hidden md:flex md:justify-center md:items-center">
-              <Initial letter={right} side="right" />
+            <div className="hidden md:flex md:items-center md:justify-center">
+              <span
+                aria-hidden="true"
+                data-initial="right"
+                className="block select-none font-script text-[9rem] font-normal italic leading-none text-white lg:text-[11rem]"
+              >
+                {right}
+              </span>
             </div>
           </div>
         </div>
@@ -482,7 +433,6 @@ const Appx: FC = () => {
         data-hide
         className="focus:outline-none"
       >
-        {/* Headline "NO SEU / GRANDE DIA" — centrado, sem overflow */}
         <div className="overflow-hidden px-4 pt-10 pb-6 text-center md:pt-16 md:pb-10">
           <h2 className="inline-block">
             {CONTENT.headline.map((line) => (
@@ -491,6 +441,7 @@ const Appx: FC = () => {
           </h2>
         </div>
 
+        <Sliver text={CONTENT.cropped} edge="bottom" />
       </section>
     </main>
   );
