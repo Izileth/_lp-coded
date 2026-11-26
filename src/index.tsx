@@ -18,7 +18,7 @@ const CONTENT = {
     { label: "INÍCIO", href: "#topo" },
   ],
   paragraphs: [
-    "Bom, eu não sei como designar esse texto, mas é uma homenagem a você, meu irmão. Eu sei que você não gosta de muitas palavras, então vou tentar ser breve.",
+    "Bom, eu não sei como designar esse texto, mas é uma parabenização a você, meu irmão, sei que você não gosta de muitas palavras, então vou ser breve.",
     "Estamos contigo, eu e mamãe, e queremos que você saiba que te amamos muito. Que você viva como mais um dia, pois sabemos que não és fã de comemorações, apenas persita em busca de seus o objetivos, e estaremos sempre a te apoiando em cada decisão que você tomar",
   ],
   footer: {
