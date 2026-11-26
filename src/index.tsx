@@ -328,7 +328,7 @@ const Appx: FC = () => {
           <div className="mt-2 h-px w-16 bg-white/30 md:w-24" />
         </div>
 
-        {/* ── Nav ── */}
+        {/* ── Nav ── 
         <div className="border-t border-white/20">
           <nav data-nav aria-label="Principal">
             <ul className={`flex items-center justify-center gap-8 px-6 py-4 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white sm:gap-12 sm:text-sm md:gap-16 md:py-5 md:text-base ${MASK_PAD}`}>
@@ -345,6 +345,10 @@ const Appx: FC = () => {
             </ul>
           </nav>
         </div>
+        
+        
+        */}
+   
       </section>
 
       {/* ════════════════════════════════════════
@@ -440,8 +444,6 @@ const Appx: FC = () => {
             ))}
           </h2>
         </div>
-
-        <Sliver text={CONTENT.cropped} edge="bottom" />
       </section>
     </main>
   );
