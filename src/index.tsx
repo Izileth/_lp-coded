@@ -1,4 +1,4 @@
-import { useRef, type FC } from "react";
+import { useRef, useState, type FC } from "react";
 import { gsap, SplitText, useGSAP } from "./lib/gsap";
 
 
@@ -8,6 +8,10 @@ const CONTENT = {
   initials: ["K", "C"] as const,
   cropped: "PARABÉNS",
   headline: ["FEITO PELO", "SEU IRMÂO"] as const,
+  splash: {
+    eyebrow: "UMA HOMENAGEM ESPECIAL",
+    word: "PARABÉNS",
+  },
   nav: [
     { label: "HOMENAGEM", href: "#homenagem" },
     { label: "FESTA", href: "#festa" },
@@ -17,6 +21,11 @@ const CONTENT = {
     "Bom, eu não sei como designar esse texto, mas é uma homenagem a você, meu irmão. Eu sei que você não gosta de muitas palavras, então vou tentar ser breve.",
     "Estamos contigo, eu e mamãe, e queremos que você saiba que te amamos muito. Que você viva como mais um dia, pois sabemos que não és fã de comemorações, apenas persita em busca de seus o objetivos, e estaremos sempre a te apoiando em cada decisão que você tomar",
   ],
+  footer: {
+    dedication: "Com todo amor da sua família.",
+    signature: "Feito pelo seu irmão",
+    year: "2026",
+  },
 };
 
 /* ============================================================== */
@@ -91,9 +100,125 @@ const GiantLine: FC<{ text: string }> = ({ text }) => (
   </span>
 );
 
+/* ------------------------------------------------------------------ */
+/*  Splash Screen — abertura editorial no mesmo tema do projeto        */
+/* ------------------------------------------------------------------ */
+const SplashScreen: FC<{ onDone: () => void }> = ({ onDone }) => {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [left, right] = CONTENT.initials;
+
+  useGSAP(
+    () => {
+      const overlay = overlayRef.current;
+      if (!overlay) return;
+
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) {
+        onDone();
+        return;
+      }
+
+      const tl = gsap.timeline({
+        onComplete: onDone,
+      });
+
+      tl.from("[data-splash-eyebrow]", {
+        yPercent: 100,
+        opacity: 0,
+        duration: 0.55,
+        ease: "editorial",
+      })
+        .from(
+          "[data-splash-initials]",
+          {
+            scale: 0.9,
+            opacity: 0,
+            duration: 0.7,
+            ease: "editorial",
+          },
+          "-=0.35",
+        )
+        .from(
+          "[data-splash-word]",
+          {
+            yPercent: 105,
+            duration: 0.75,
+            ease: "poster",
+          },
+          "-=0.45",
+        )
+        .fromTo(
+          "[data-splash-bar]",
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            duration: 0.85,
+            ease: "poster",
+          },
+          "-=0.4",
+        )
+        .to(overlay, {
+          yPercent: -100,
+          duration: 0.85,
+          ease: "poster",
+          delay: 0.15,
+        });
+    },
+    { scope: overlayRef },
+  );
+
+  return (
+    <div
+      ref={overlayRef}
+      role="status"
+      aria-label="Carregando homenagem"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-brand px-6 text-white"
+    >
+      {/* Iniciais sutis ao fundo, combinando com a seção Homenagem */}
+      <span
+        aria-hidden="true"
+        data-splash-initials
+        className="pointer-events-none select-none font-script text-[9rem] font-normal italic leading-none text-white/15 sm:text-[13rem] md:text-[16rem]"
+      >
+        {left}&thinsp;{right}
+      </span>
+
+      {/* Bloco central sobreposto */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="overflow-hidden">
+          <p
+            data-splash-eyebrow
+            className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-white/75 sm:text-xs"
+          >
+            {CONTENT.splash.eyebrow}
+          </p>
+        </div>
+
+        <div className="overflow-hidden">
+          <span
+            data-splash-word
+            className="block font-display text-[3.25rem] uppercase leading-none tracking-tight text-white sm:text-[5rem] md:text-[6.5rem]"
+          >
+            {CONTENT.splash.word}
+          </span>
+        </div>
+
+        {/* Barra de progresso editorial */}
+        <div className="mt-2 h-px w-36 overflow-hidden bg-white/25 sm:w-48">
+          <div
+            data-splash-bar
+            className="h-full w-full origin-left bg-white"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Appx: FC = () => {
   const root = useRef<HTMLElement>(null);
   const [left, right] = CONTENT.initials;
+  const [splashDone, setSplashDone] = useState(false);
 
   useGSAP(
     () => {
@@ -156,7 +281,10 @@ const Appx: FC = () => {
             });
 
             gsap
-              .timeline({ defaults: { ease: "power3.out" } })
+              .timeline({
+                defaults: { ease: "power3.out" },
+                delay: splashDone ? 0 : 1.75,
+              })
               .from(one("[data-sliver='top'] [data-word]"), {
                 yPercent: 105,
                 duration: 1.4,
@@ -274,16 +402,36 @@ const Appx: FC = () => {
               );
             });
 
-            // PARABÉNS rodapé sobe com scrub
-            gsap.fromTo(
-              one("[data-sliver='bottom'] [data-word]"),
-              { yPercent: 60 },
-              {
-                yPercent: 0,
-                ease: "none",
-                scrollTrigger: { trigger: festa, start: "top 80%", end: "bottom bottom", scrub: true },
-              },
-            );
+            // PARABÉNS rodapé sobe com scrub (se existir no DOM)
+            const bottomWord = el.querySelector<HTMLElement>("[data-sliver='bottom'] [data-word]");
+            if (bottomWord) {
+              gsap.fromTo(
+                bottomWord,
+                { yPercent: 60 },
+                {
+                  yPercent: 0,
+                  ease: "none",
+                  scrollTrigger: { trigger: festa, start: "top 80%", end: "bottom bottom", scrub: true },
+                },
+              );
+            }
+
+            /* ===== 4 · FOOTER ===== */
+            const footer = el.querySelector<HTMLElement>("[data-footer]");
+            if (footer) {
+              gsap.fromTo(
+                footer.querySelectorAll("[data-footer-item]"),
+                { y: 24, opacity: 0 },
+                {
+                  y: 0,
+                  opacity: 1,
+                  duration: 0.8,
+                  stagger: 0.1,
+                  ease: "editorial",
+                  scrollTrigger: { trigger: footer, start: "top 90%", once: true },
+                },
+              );
+            }
 
             return cleanup;
           },
@@ -301,11 +449,14 @@ const Appx: FC = () => {
   );
 
   return (
-    <main
-      ref={root}
-      data-pending=""
-      className="w-full overflow-x-hidden bg-brand text-white"
-    >
+    <>
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
+
+      <main
+        ref={root}
+        data-pending=""
+        className="w-full overflow-x-hidden bg-brand text-white"
+      >
       {/* ════════════════════════════════════════
           SEÇÃO 1 · INÍCIO — Hero com nome do aniversariante
           ════════════════════════════════════════ */}
@@ -437,7 +588,7 @@ const Appx: FC = () => {
         data-hide
         className="focus:outline-none"
       >
-        <div className="overflow-hidden px-4 pt-10 pb-6 text-center md:pt-16 md:pb-10">
+        <div className="overflow-hidden px-4 pt-10 pb-12 text-center md:pt-16 md:pb-20">
           <h2 className="inline-block">
             {CONTENT.headline.map((line) => (
               <GiantLine key={line} text={line} />
@@ -445,7 +596,71 @@ const Appx: FC = () => {
           </h2>
         </div>
       </section>
+
+      {/* ════════════════════════════════════════
+          FOOTER — Editorial no tema da página
+          ════════════════════════════════════════ */}
+      <footer
+        data-footer
+        className="border-t border-white/20 bg-brand text-white"
+      >
+        <div className="mx-auto max-w-7xl px-6 pt-12 pb-8 md:px-10 md:pt-16 md:pb-10 lg:px-16">
+          <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
+            {/* Bloco esquerdo: iniciais + nome + dedicatória */}
+            <div data-footer-item className="flex flex-col gap-2">
+              <div className="flex items-baseline gap-3">
+                <span className="font-script text-4xl italic leading-none text-white sm:text-5xl">
+                  {CONTENT.name}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white/50"
+                >
+                  {left}·{right}
+                </span>
+              </div>
+              <p className="font-sans text-sm font-medium text-white/75 md:text-base">
+                {CONTENT.footer.dedication}
+              </p>
+            </div>
+
+            {/* Bloco direito: navegação rápida + voltar ao topo */}
+            <nav
+              data-footer-item
+              aria-label="Rodapé"
+              className="flex flex-wrap items-center gap-6 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-white/90 sm:gap-8"
+            >
+              {CONTENT.nav.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="relative inline-block pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-300 hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a
+                href="#topo"
+                aria-label="Voltar ao topo"
+                className="inline-flex items-center gap-1.5 border border-white/30 px-3 py-1.5 text-[0.7rem] tracking-[0.16em] transition-colors duration-200 hover:border-white hover:bg-white hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                TOPO ↑
+              </a>
+            </nav>
+          </div>
+
+          {/* Barra inferior: assinatura + ano */}
+          <div
+            data-footer-item
+            className="mt-10 flex flex-col items-start justify-between gap-2 border-t border-white/15 pt-6 font-sans text-xs uppercase tracking-[0.16em] text-white/60 sm:flex-row sm:items-center"
+          >
+            <span>{CONTENT.footer.signature}</span>
+            <span>{CONTENT.cropped} · {CONTENT.footer.year}</span>
+          </div>
+        </div>
+      </footer>
     </main>
+    </>
   );
 };
 
