@@ -4,7 +4,7 @@ import { gsap, SplitText, useGSAP } from "./lib/gsap";
 
 /* ========================= EDITE AQUI ========================= */
 const CONTENT = {
-  name: "Kawe Kleber",          // Nome exibido no hero principal
+  name: "Kawê Kleber",          // Nome exibido no hero principal
   initials: ["K", "C"] as const,
   cropped: "PARABÉNS",
   headline: ["FEITO PELO", "SEU IRMÂO"] as const,
@@ -14,8 +14,8 @@ const CONTENT = {
     { label: "INÍCIO", href: "#topo" },
   ],
   paragraphs: [
-    "No sábado à tarde a família inteira se reúne. Os balões já estão no ar, o bolo espera na mesa e todo mundo aguarda o momento de abraçar o aniversariante. Entre risadas, fotos e uma conversa rápida com os amigos de sempre, chega a hora de acender as velas, fazer um pedido e respirar fundo. Quando começam os parabéns, o novo capítulo dessa história começa.",
-    "Ao olharmos para trás, depois de tantos anos, sentamos com ele para entender o que passa em seu coração neste novo ciclo. Uma jornada que até aqui entregou muitas conquistas, viagens, brincadeiras, lutas vencidas, memórias inesquecíveis e uma amizade que não cabe em nenhum cartão de aniversário.",
+    "Bom, eu não sei como designar esse texto, mas é uma homenagem a você, meu irmão. Eu sei que você não gosta de muitas palavras, então vou tentar ser breve.",
+    "Estamos contigo, eu e mamãe, e queremos que você saiba que te amamos muito. Que você viva como mais um dia, pois sabemos que não és fã de comemorações, apenas persita em busca de seus o objetivos, e estaremos sempre a te apoiando em cada decisão que você tomar",
   ],
 };
 
